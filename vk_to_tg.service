@@ -1,0 +1,14 @@
+[Unit]
+Description=VK to Telegram Bot
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/root/vk_to_tg_bot
+ExecStart=/root/vk_to_tg_bot/venv/bin/python /root/vk_to_tg_bot/bot.py
+Restart=always
+RestartSec=10
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
