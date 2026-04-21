@@ -14,6 +14,3 @@ last_post.json
 # System files
 .DS_Store
 Thumbs.db
-
-# Service file (можно закомментировать, если хочешь залить)
-# vk_to_tg.service
