@@ -3,12 +3,100 @@ Description=VK to Telegram Bot
 After=network.target
 
 [Service]
+# ⚠️ =====================================================
+# ⚠️ ВНИМАНИЕ: Замените пути и пользователя на свои!
+# ⚠️ =====================================================
+#
+# КАК УЗНАТЬ НУЖНЫЕ ПУТИ:
+#   1. Откройте терминал на сервере
+#   2. Перейдите в папку с ботом: cd /путь/к/вашему/проекту
+#   3. Выполните команду: pwd
+#      → это будет ваш WorkingDirectory
+#   4. Выполните команду: which python
+#      → это будет путь к Python
+#   5. Если используете виртуальное окружение (venv):
+#      → путь к Python: /путь/к/проекту/venv/bin/python
+#      → проверьте: ls -la /путь/к/проекту/venv/bin/python
+#
+# =====================================================
+# ПРИМЕРЫ ДЛЯ РАЗНЫХ СИТУАЦИЙ:
+# =====================================================
+#
+# Пример 1: Запуск от обычного пользователя с venv
+#   User=ubuntu
+#   WorkingDirectory=/home/ubuntu/vk-to-telegram-bot
+#   ExecStart=/home/ubuntu/vk-to-telegram-bot/venv/bin/python /home/ubuntu/vk-to-telegram-bot/bot.py
+#
+# Пример 2: Запуск от root с venv
+#   User=root
+#   WorkingDirectory=/root/vk-to-telegram-bot
+#   ExecStart=/root/vk-to-telegram-bot/venv/bin/python /root/vk-to-telegram-bot/bot.py
+#
+# Пример 3: Без виртуального окружения (глобальный Python)
+#   User=ubuntu
+#   WorkingDirectory=/home/ubuntu/vk-to-telegram-bot
+#   ExecStart=/usr/bin/python3 /home/ubuntu/vk-to-telegram-bot/bot.py
+#
+# =====================================================
+# ⚠️ НИЖЕ ИДУТ ПРИМЕРЫ — ЗАМЕНИТЕ НА СВОИ ЗНАЧЕНИЯ!
+# =====================================================
+
+# Имя пользователя (НЕ рекомендуется использовать root)
+# Узнать своё имя: whoami
 User=root
+
+# Полный путь к папке с ботом
+# Узнать командой: pwd (находясь в папке проекта)
 WorkingDirectory=/root/vk_to_tg_bot
+
+# Команда запуска: путь к Python и путь к bot.py
 ExecStart=/root/vk_to_tg_bot/venv/bin/python /root/vk_to_tg_bot/bot.py
+
+# Автоматически перезапускать бота, если упал
 Restart=always
+
+# Подождать 10 секунд перед перезапуском
 RestartSec=10
+
+# Отключает буферизацию вывода Python (логи видны сразу)
 Environment=PYTHONUNBUFFERED=1
 
 [Install]
 WantedBy=multi-user.target
+
+# =====================================================
+# КАК УСТАНОВИТЬ И ЗАПУСТИТЬ СЕРВИС:
+# =====================================================
+#
+# 1. Скопируйте этот файл в системную папку:
+#    sudo cp vk_to_tg.service /etc/systemd/system/
+#
+# 2. Перезагрузите systemd (чтобы увидел новый сервис):
+#    sudo systemctl daemon-reload
+#
+# 3. Включите автозапуск при загрузке системы:
+#    sudo systemctl enable vk_to_tg
+#
+# 4. Запустите бота:
+#    sudo systemctl start vk_to_tg
+#
+# 5. Проверьте статус (должен быть active (running)):
+#    sudo systemctl status vk_to_tg
+#
+# =====================================================
+# ПОЛЕЗНЫЕ КОМАНДЫ ДЛЯ УПРАВЛЕНИЯ:
+# =====================================================
+#
+# Остановить бота:
+#    sudo systemctl stop vk_to_tg
+#
+# Перезапустить бота:
+#    sudo systemctl restart vk_to_tg
+#
+# Посмотреть последние логи:
+#    sudo journalctl -u vk_to_tg -n 50
+#
+# Смотреть логи в реальном времени:
+#    sudo journalctl -u vk_to_tg -f
+#
+# =====================================================
