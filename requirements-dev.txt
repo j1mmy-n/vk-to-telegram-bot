@@ -1,0 +1,17 @@
+# Зависимости для разработки (линтеры, форматтеры, тесты)
+# Установка: pip install -r requirements-dev.txt
+
+-r requirements.txt
+
+# Линтеры и форматтеры
+flake8==7.0.0
+black==24.4.0
+isort==5.13.2
+mypy==1.10.0
+
+# Тестирование
+pytest==8.2.0
+pytest-mock==3.14.0
+
+# Утилиты
+watchdog==4.0.1
