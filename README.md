@@ -55,9 +55,11 @@ cp .env.example .env
 ```
 VK_TOKEN=your_vk_token
 TG_TOKEN=your_telegram_token 
-CHANNEL_ID=your_channel_id - должен быть цифровым (например -1001234567890), формат @username может не работать
+CHANNEL_ID=your_channel_id
 CHECK_INTERVAL=3600 – как часто проверять (в секундах). По умолчанию 3600 (1 час).
 ```
+Channel ID - должен быть цифровым (например -1001234567890), формат @username может не работать.
+Check Interval - как часто проверять (в секундах). По умолчанию 3600 (1 час).
 
 ---
 
@@ -120,7 +122,7 @@ vk-to-telegram-bot/
 В репозитории есть файл vk_to_tg.service – готовый шаблон для автозапуска бота как службы.
 **Инструкция:**
 
-1. Отредактируйте vk-to-tg.service, заменив пути на свои
+1. Отредактируйте vk_to_tg.service, заменив пути на свои
 2. Скопируйте его в системную папку
 ```
 sudo cp vk_to_tg.service /etc/systemd/system/
@@ -143,10 +145,10 @@ pip install -r requirements-dev.txt
 ```
 Они включают:
 
-flake8 – проверка стиля кода
-black – автоформатирование
-isort – сортировка импортов
-pytest – тестирование
+- 'flake8' – проверка стиля кода
+- 'black' – автоформатирование
+- 'isort' – сортировка импортов
+- 'pytest' – тестирование
 
 ---
 
