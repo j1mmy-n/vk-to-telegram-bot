@@ -15,7 +15,7 @@ VK_TOKEN = os.getenv("VK_TOKEN")
 GROUP_ID = int(os.getenv("GROUP_ID"))
 
 # Интервал проверки (в секундах)
-CHECK_INTERVAL = 3600   # 3600 = 1 час | 1800 = 30 минут | 900 = 15 минут
+CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL", 3600))   # Спрашивает Check Interval из указанного в .env файле, если там не указан, то сбрасывается на значение по умолчанию 3600 (проверка раз в 1 час)
 
 if not all([TG_TOKEN, CHANNEL_ID, VK_TOKEN, GROUP_ID]):
     print("❌ Ошибка: Не все переменные найдены в .env файле!")
