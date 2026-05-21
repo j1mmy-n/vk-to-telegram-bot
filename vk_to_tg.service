@@ -36,8 +36,8 @@ After=network.target
 # =====================================================
 
 User=root
-WorkingDirectory=/root/vk_to_tg_bot
-ExecStart=/root/vk_to_tg_bot/venv/bin/python /root/vk_to_tg_bot/bot.py
+WorkingDirectory=/root/vk-to-telegram-bot
+ExecStart=/root/vk-to-telegram-bot/venv/bin/python /root/vk-to-telegram-bot/bot.py
 Restart=always
 RestartSec=10
 Environment=PYTHONUNBUFFERED=1
