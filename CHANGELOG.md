@@ -7,6 +7,8 @@
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-06-22
+
 ### Added
 
 - Добавлен файл лицензии MIT.
@@ -55,6 +57,7 @@
 - Настройка токенов, идентификаторов и интервала проверки через `.env`.
 - Шаблон systemd-сервиса для запуска и автоматического перезапуска бота.
 
-[Unreleased]: https://github.com/j1mmy-n/vk-to-telegram-bot/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/j1mmy-n/vk-to-telegram-bot/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/j1mmy-n/vk-to-telegram-bot/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/j1mmy-n/vk-to-telegram-bot/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/j1mmy-n/vk-to-telegram-bot/releases/tag/v1.0.0
