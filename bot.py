@@ -3,7 +3,6 @@ import logging
 import os
 import signal
 import sys
-import time
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from threading import Event
@@ -231,7 +230,10 @@ def send_post_to_channel(post):
             bot.send_message(CHANNEL_ID, text[:4096])
             logger.info("Пост %s: отправлен текст", post["id"])
         else:
-            logger.warning("Пост %s не содержит поддерживаемого контента", post["id"])
+            logger.warning(
+                "Пост %s не содержит поддерживаемого контента",
+                post["id"],
+            )
 
         logger.info("Пост %s успешно обработан", post["id"])
         return True
@@ -264,8 +266,8 @@ def run():
                 logger.info("Обработка поста %s", post["id"])
                 if not send_post_to_channel(post):
                     logger.warning(
-                        "Обработка остановлена на посте %s; "
-                        "следующая попытка будет через %s секунд",
+                        "Обработка остановлена на посте %s; следующая "
+                        "попытка будет через %s секунд",
                         post["id"],
                         CHECK_INTERVAL,
                     )
