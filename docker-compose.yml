@@ -2,7 +2,7 @@ services:
   bot:
     build:
       context: .
-    image: vk-to-telegram-bot:local
+    image: ghcr.io/j1mmy-n/vk-to-telegram-bot:${BOT_VERSION:-latest}
     env_file:
       - .env
     environment:
