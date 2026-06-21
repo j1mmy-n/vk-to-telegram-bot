@@ -1,0 +1,15 @@
+.git
+.gitignore
+.env
+.venv
+venv
+__pycache__
+*.py[cod]
+*.log
+data
+logs
+last_post.json
+CHANGELOG.md
+README.md
+requirements-dev.txt
+vk_to_tg.service
