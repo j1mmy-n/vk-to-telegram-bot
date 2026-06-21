@@ -22,4 +22,6 @@ services:
 
 volumes:
   bot_data:
+    name: vk-to-telegram-bot-data
   bot_logs:
+    name: vk-to-telegram-bot-logs
