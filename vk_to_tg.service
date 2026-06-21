@@ -1,83 +1,28 @@
 [Unit]
-Description=VK to Telegram Bot
-After=network.target
+Description=VK to Telegram Bot (Docker Compose)
+Documentation=https://github.com/j1mmy-n/vk-to-telegram-bot
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
 
 [Service]
-# ⚠️ =====================================================
-# ⚠️ ВНИМАНИЕ: СНАЧАЛА ЗАМЕНИТЕ ПУТИ НА СВОИ!
-# ⚠️ =====================================================
-#
-# КАК УЗНАТЬ НУЖНЫЕ ПУТИ:
-#   1. Откройте терминал на сервере
-#   2. Перейдите в папку с ботом: cd /путь/к/вашему/проекту
-#   3. Выполните команду: pwd
-#      → это будет ваш WorkingDirectory
-#   4. Выполните команду: which python
-#      → это будет путь к Python
-#   5. Если используете виртуальное окружение (venv):
-#      → путь к Python: /путь/к/проекту/venv/bin/python
-#
-# =====================================================
-# ПРИМЕРЫ (ЗАМЕНИТЕ НА СВОИ ЗНАЧЕНИЯ):
-# =====================================================
-#
-# Пример с обычным пользователем и venv:
-#   User=ubuntu
-#   WorkingDirectory=/home/ubuntu/vk-to-telegram-bot
-#   ExecStart=/home/ubuntu/vk-to-telegram-bot/venv/bin/python /home/ubuntu/vk-to-telegram-bot/bot.py
-#
-# Пример без venv (глобальный Python):
-#   User=ubuntu
-#   WorkingDirectory=/home/ubuntu/vk-to-telegram-bot
-#   ExecStart=/usr/bin/python3 /home/ubuntu/vk-to-telegram-bot/bot.py
-#
-# =====================================================
-# ⚠️ НИЖЕ ИДУТ ПРИМЕРЫ — ОБЯЗАТЕЛЬНО ЗАМЕНИТЕ НА СВОИ!
-# =====================================================
+Type=oneshot
+RemainAfterExit=yes
 
-User=root
-WorkingDirectory=/root/vk-to-telegram-bot
-ExecStart=/root/vk-to-telegram-bot/venv/bin/python /root/vk-to-telegram-bot/bot.py
-Restart=always
-RestartSec=10
-Environment=PYTHONUNBUFFERED=1
+# Измените путь, если репозиторий расположен не в /opt/vk-to-telegram-bot.
+WorkingDirectory=/opt/vk-to-telegram-bot
+
+ExecStart=/usr/bin/docker compose up -d --remove-orphans
+
+# Reload загружает выбранную в .env версию образа и применяет её.
+ExecReload=/usr/bin/docker compose pull
+ExecReload=/usr/bin/docker compose up -d --remove-orphans
+
+# Останавливает контейнеры, но сохраняет volumes с состоянием и логами.
+ExecStop=/usr/bin/docker compose down
+
+TimeoutStartSec=0
+TimeoutStopSec=30
 
 [Install]
 WantedBy=multi-user.target
-
-# =====================================================
-# ПОШАГОВАЯ ИНСТРУКЦИЯ ПО УСТАНОВКЕ СЕРВИСА:
-# =====================================================
-#
-# 1. Откройте этот файл (vk_to_tg.service) в любом текстовом редакторе
-#
-# 2. ЗАМЕНИТЕ примеры путей (User, WorkingDirectory, ExecStart)
-#    на свои реальные значения (как узнать пути — см. выше)
-#
-# 3. Сохраните файл
-#
-# 4. Скопируйте ИСПРАВЛЕННЫЙ файл в системную папку:
-#    sudo cp vk_to_tg.service /etc/systemd/system/
-#
-# 5. Перезагрузите systemd:
-#    sudo systemctl daemon-reload
-#
-# 6. Включите автозапуск при загрузке:
-#    sudo systemctl enable vk_to_tg
-#
-# 7. Запустите бота:
-#    sudo systemctl start vk_to_tg
-#
-# 8. Проверьте, что работает (должен быть active (running)):
-#    sudo systemctl status vk_to_tg
-#
-# =====================================================
-# ПОЛЕЗНЫЕ КОМАНДЫ:
-# =====================================================
-#
-# Остановить:      sudo systemctl stop vk_to_tg
-# Перезапустить:   sudo systemctl restart vk_to_tg
-# Посмотреть логи: sudo journalctl -u vk_to_tg -n 50
-# Логи в реальном времени: sudo journalctl -u vk_to_tg -f
-#
-# =====================================================

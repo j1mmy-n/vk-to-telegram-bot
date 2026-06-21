@@ -1,4 +1,5 @@
-![Python](https://img.shields.io/badge/Python-3.7%2B-blue)
+![Python](https://img.shields.io/badge/Python-3.12-blue)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED)
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Status](https://img.shields.io/badge/Status-Working-brightgreen)
 
@@ -30,54 +31,145 @@ Telegram API может работать нестабильно или не ра
   
 ## Требования
 
-- Docker с плагином Docker Compose (рекомендуемый способ)
-- либо Python 3.9 или выше для запуска без Docker
+- Linux-сервер с Docker Engine и плагином Docker Compose
 - Доступ к VK API и Telegram Bot API
-- Для запуска в РФ – сервер за пределами РФ или VPN
+- `git` для загрузки и обновления файлов проекта
+
+Python, `pip` и библиотеки на сервер отдельно устанавливать не нужно: они уже
+включены в Docker-образ.
 
 ---
 
-## Быстрый запуск через Docker
+## Развёртывание на чистом Ubuntu-сервере
+
+Ниже приведён рекомендуемый вариант с
+[официальным репозиторием Docker](https://docs.docker.com/engine/install/ubuntu/).
+
+### 1. Установите Docker Engine
+
+Удалите конфликтующие неофициальные пакеты, если они были установлены:
 
 ```bash
-git clone https://github.com/j1mmy-n/vk-to-telegram-bot
-cd vk-to-telegram-bot
-cp .env.example .env
+for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do
+  sudo apt-get remove -y "$pkg"
+done
 ```
 
-Заполните `.env` своими токенами и идентификаторами, затем загрузите готовый
-образ из GitHub Container Registry и запустите:
+Добавьте официальный репозиторий Docker:
 
 ```bash
-docker compose pull
-docker compose up -d
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl git
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+  -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+sudo tee /etc/apt/sources.list.d/docker.sources >/dev/null <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+
+sudo apt-get update
+sudo apt-get install -y \
+  docker-ce \
+  docker-ce-cli \
+  containerd.io \
+  docker-buildx-plugin \
+  docker-compose-plugin
 ```
 
-Проверить состояние контейнера и посмотреть поток логов:
+Проверьте установку:
 
 ```bash
-docker compose ps
-docker compose logs -f bot
+sudo systemctl enable --now docker
+sudo docker run --rm hello-world
+sudo docker compose version
 ```
 
-Обновить бота:
+> Команды ниже используют `sudo`. Добавлять пользователя в группу `docker`
+> необязательно: участники этой группы фактически получают root-доступ к
+> серверу.
+
+### 2. Загрузите проект
 
 ```bash
-git pull
-docker compose pull
-docker compose up -d
+sudo git clone https://github.com/j1mmy-n/vk-to-telegram-bot \
+  /opt/vk-to-telegram-bot
+cd /opt/vk-to-telegram-bot
+sudo cp .env.example .env
 ```
 
-Остановить бота:
+Откройте `.env` любым доступным редактором:
 
 ```bash
-docker compose down
+sudo nano .env
+```
+
+`nano` нужен только для редактирования конфигурации и не требуется самому боту.
+Если редактор отсутствует, установите его командой `sudo apt-get install nano`
+или используйте `vi`.
+
+### 3. Запустите бота
+
+Загрузите готовый образ из GitHub Container Registry и запустите контейнер:
+
+```bash
+sudo docker compose pull
+sudo docker compose up -d
+```
+
+Проверьте состояние и логи:
+
+```bash
+sudo docker compose ps
+sudo docker compose logs -f bot
+```
+
+Контейнер использует `restart: unless-stopped`, поэтому автоматически
+перезапускается после сбоя приложения, перезапуска Docker и загрузки сервера.
+
+### Обновление
+
+```bash
+cd /opt/vk-to-telegram-bot
+sudo git pull --ff-only
+sudo docker compose pull
+sudo docker compose up -d --remove-orphans
+```
+
+Если в `.env` задано `BOT_VERSION=1.1.0`, будет использоваться именно эта
+версия. Для получения последнего стабильного релиза установите
+`BOT_VERSION=latest`.
+
+### Остановка
+
+```bash
+cd /opt/vk-to-telegram-bot
+sudo docker compose down
+```
+
+Обычная команда `docker compose down` не удаляет volumes. Не используйте
+`docker compose down -v`, если хотите сохранить ID последнего поста и логи.
+
+### Краткий вариант для сервера с установленным Docker
+
+```bash
+sudo git clone https://github.com/j1mmy-n/vk-to-telegram-bot \
+  /opt/vk-to-telegram-bot
+cd /opt/vk-to-telegram-bot
+sudo cp .env.example .env
+# заполните .env
+sudo docker compose pull
+sudo docker compose up -d
 ```
 
 Данные сохраняются в именованных Docker volumes `vk-to-telegram-bot-data` и
 `vk-to-telegram-bot-logs`.
-Обычная команда `docker compose down` их не удаляет. Не используйте
-`docker compose down -v`, если хотите сохранить ID последнего поста и логи.
 
 ### Просмотр файловых логов
 
@@ -85,8 +177,8 @@ docker compose down
 `/app/logs/bot.log` внутри постоянного volume:
 
 ```bash
-docker compose exec bot tail -f /app/logs/bot.log
-docker compose cp bot:/app/logs/bot.log ./bot.log
+sudo docker compose exec bot tail -f /app/logs/bot.log
+sudo docker compose cp bot:/app/logs/bot.log ./bot.log
 ```
 
 По умолчанию используется ротация: основной файл до 10 МБ и пять архивных
@@ -111,8 +203,8 @@ BOT_VERSION=1.1.0
 Если нужно собрать образ локально из исходников:
 
 ```bash
-docker compose build
-docker compose up -d
+sudo docker compose build
+sudo docker compose up -d
 ```
 
 ### Перенос существующего состояния в Docker
@@ -121,9 +213,9 @@ docker compose up -d
 его перед первым контейнерным запуском:
 
 ```bash
-docker compose create
-docker compose cp last_post.json bot:/app/data/last_post.json
-docker compose up -d
+sudo docker compose create
+sudo docker compose cp last_post.json bot:/app/data/last_post.json
+sudo docker compose up -d
 ```
 
 Без переноса при первом запуске бот запомнит последний доступный пост и не
@@ -131,14 +223,15 @@ docker compose up -d
 
 ---
 
-## Запуск без Docker
+## Локальный запуск без Docker
 
 ```bash
 git clone https://github.com/j1mmy-n/vk-to-telegram-bot
 cd vk-to-telegram-bot
-python -m venv venv
+python3.12 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+python bot.py
 ```
 
 На Windows команда активации окружения:
@@ -197,14 +290,6 @@ CHECK_INTERVAL=1800
 
 ---
 
-## Ручной запуск
-
-```bash
-python bot.py
-```
-
----
-
 ## Как это работает
 
 1. Бот получает новые посты через VK API (wall.get)
@@ -225,35 +310,45 @@ vk-to-telegram-bot/
 ├── .env.example               # Пример переменных окружения
 ├── requirements.txt           # Основные зависимости
 ├── requirements-dev.txt       # Зависимости для разработки
-├── vk_to_tg.service           # systemd сервис (автозапуск)
+├── vk_to_tg.service           # Необязательное управление Compose через systemd
 ├── CHANGELOG.md               # История версий
 └── README.md                  # Документация
 ```
 
 ---
 
-## Запуск через systemd (на сервере)
+## Управление через systemd (необязательно)
 
-В репозитории есть файл vk_to_tg.service – готовый шаблон для автозапуска бота как службы.
-**Инструкция:**
+Docker Compose уже настроен на автоматический перезапуск контейнера, поэтому
+отдельный systemd unit обычно не нужен. Файл `vk_to_tg.service` полезен, если
+вы хотите управлять всем Compose-проектом командами `systemctl`.
 
-1. Отредактируйте vk_to_tg.service, заменив пути на свои
-2. Скопируйте его в системную папку
+Шаблон ожидает репозиторий в `/opt/vk-to-telegram-bot`. Если используется
+другой путь, измените `WorkingDirectory` в файле.
 
-```
+```bash
+cd /opt/vk-to-telegram-bot
 sudo cp vk_to_tg.service /etc/systemd/system/
-```
-
-3. Перезапустите systemd и запустите бота:
-
-```
 sudo systemctl daemon-reload
-sudo systemctl enable vk_to_tg
-sudo systemctl start vk_to_tg
-sudo systemctl status vk_to_tg
+sudo systemctl enable --now vk_to_tg.service
+sudo systemctl status vk_to_tg.service
 ```
 
-Подробные команды и пояснения есть внутри самого файла.
+Полезные команды:
+
+```bash
+sudo systemctl reload vk_to_tg.service   # скачать и применить выбранный образ
+sudo systemctl restart vk_to_tg.service  # остановить и запустить заново
+sudo systemctl stop vk_to_tg.service
+sudo journalctl -u vk_to_tg.service -n 50
+```
+
+Логи самого бота удобнее смотреть через:
+
+```bash
+cd /opt/vk-to-telegram-bot
+sudo docker compose logs -f bot
+```
 
 ---
 
