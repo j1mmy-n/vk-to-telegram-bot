@@ -10,6 +10,8 @@ __pycache__/
 # Runtime data
 last_post.json
 *.log
+logs/
+data/
 
 # System files
 .DS_Store

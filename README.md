@@ -29,18 +29,101 @@ Telegram API может работать нестабильно или не ра
 - или запускать бота через VPN
   
 ## Требования
-- Python 3.7 или выше
+
+- Docker с плагином Docker Compose (рекомендуемый способ)
+- либо Python 3.9 или выше для запуска без Docker
 - Доступ к VK API и Telegram Bot API
 - Для запуска в РФ – сервер за пределами РФ или VPN
 
 ---
 
-## Установка
+## Быстрый запуск через Docker
 
 ```bash
 git clone https://github.com/j1mmy-n/vk-to-telegram-bot
 cd vk-to-telegram-bot
+cp .env.example .env
+```
+
+Заполните `.env` своими токенами и идентификаторами, затем запустите:
+
+```bash
+docker compose up -d --build
+```
+
+Проверить состояние контейнера и посмотреть поток логов:
+
+```bash
+docker compose ps
+docker compose logs -f bot
+```
+
+Обновить бота:
+
+```bash
+git pull
+docker compose up -d --build
+```
+
+Остановить бота:
+
+```bash
+docker compose down
+```
+
+Данные сохраняются в именованных Docker volumes `vk-to-telegram-bot-data` и
+`vk-to-telegram-bot-logs`.
+Обычная команда `docker compose down` их не удаляет. Не используйте
+`docker compose down -v`, если хотите сохранить ID последнего поста и логи.
+
+### Просмотр файловых логов
+
+Логи одновременно выводятся через `docker compose logs` и записываются в
+`/app/logs/bot.log` внутри постоянного volume:
+
+```bash
+docker compose exec bot tail -f /app/logs/bot.log
+docker compose cp bot:/app/logs/bot.log ./bot.log
+```
+
+По умолчанию используется ротация: основной файл до 10 МБ и пять архивных
+файлов. Параметры меняются через `LOG_LEVEL`, `LOG_MAX_BYTES` и
+`LOG_BACKUP_COUNT` в `.env`.
+
+> Файловые логи помогают расследовать сбои после восстановления доступа к
+> серверу. Для уведомления о полной недоступности сервера нужен отдельный
+> внешний мониторинг.
+
+### Перенос существующего состояния в Docker
+
+Если бот уже работал без Docker и рядом с ним есть `last_post.json`, перенесите
+его перед первым контейнерным запуском:
+
+```bash
+docker compose create
+docker compose cp last_post.json bot:/app/data/last_post.json
+docker compose up -d
+```
+
+Без переноса при первом запуске бот запомнит последний доступный пост и не
+будет пересылать старые публикации.
+
+---
+
+## Запуск без Docker
+
+```bash
+git clone https://github.com/j1mmy-n/vk-to-telegram-bot
+cd vk-to-telegram-bot
+python -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
+```
+
+На Windows команда активации окружения:
+
+```powershell
+.\venv\Scripts\Activate.ps1
 ```
 
 ---
@@ -93,7 +176,7 @@ CHECK_INTERVAL=1800
 
 ---
 
-## Запуск
+## Ручной запуск
 
 ```bash
 python bot.py
@@ -114,11 +197,15 @@ python bot.py
 ```
 vk-to-telegram-bot/
 ├── bot.py                     # Основной скрипт
+├── Dockerfile                 # Сборка Docker-образа
+├── docker-compose.yml         # Запуск и постоянные volumes
+├── .dockerignore              # Исключения контекста Docker
 ├── .env.example               # Пример переменных окружения
 ├── requirements.txt           # Основные зависимости
 ├── requirements-dev.txt       # Зависимости для разработки
 ├── vk_to_tg.service           # systemd сервис (автозапуск)
-└── README.md                  # Этот файл
+├── CHANGELOG.md               # История версий
+└── README.md                  # Документация
 ```
 
 ---
@@ -167,7 +254,7 @@ pip install -r requirements-dev.txt
 ## TODO (планы на доработку)
 
 1. Добавить поддержку видео
-2. Логирование в файл (вместо print)
+2. Добавить внешний мониторинг доступности
 3. Повторные попытки при ошибках Telegram API
 4. Поддержка других вложений (документы)
 

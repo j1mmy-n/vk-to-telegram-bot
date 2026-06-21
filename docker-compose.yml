@@ -1,0 +1,27 @@
+services:
+  bot:
+    build:
+      context: .
+    image: vk-to-telegram-bot:local
+    env_file:
+      - .env
+    environment:
+      LAST_POST_FILE: /app/data/last_post.json
+      LOG_FILE: /app/logs/bot.log
+    volumes:
+      - bot_data:/app/data
+      - bot_logs:/app/logs
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 15s
+
+volumes:
+  bot_data:
+    name: vk-to-telegram-bot-data
+  bot_logs:
+    name: vk-to-telegram-bot-logs
