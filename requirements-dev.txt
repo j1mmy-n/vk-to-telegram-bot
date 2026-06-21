@@ -12,6 +12,7 @@ mypy==1.10.0
 # Тестирование
 pytest==8.2.0
 pytest-mock==3.14.0
+pip-audit==2.10.1
 
 # Утилиты
 watchdog==4.0.1
