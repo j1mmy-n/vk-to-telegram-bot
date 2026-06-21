@@ -1,5 +1,7 @@
 .git
+.github
 .gitignore
+.flake8
 .env
 .venv
 venv
@@ -10,6 +12,7 @@ data
 logs
 last_post.json
 CHANGELOG.md
+LICENSE
 README.md
 requirements-dev.txt
 vk_to_tg.service
