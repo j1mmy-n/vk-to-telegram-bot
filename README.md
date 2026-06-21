@@ -45,10 +45,12 @@ cd vk-to-telegram-bot
 cp .env.example .env
 ```
 
-Заполните `.env` своими токенами и идентификаторами, затем запустите:
+Заполните `.env` своими токенами и идентификаторами, затем загрузите готовый
+образ из GitHub Container Registry и запустите:
 
 ```bash
-docker compose up -d --build
+docker compose pull
+docker compose up -d
 ```
 
 Проверить состояние контейнера и посмотреть поток логов:
@@ -62,7 +64,8 @@ docker compose logs -f bot
 
 ```bash
 git pull
-docker compose up -d --build
+docker compose pull
+docker compose up -d
 ```
 
 Остановить бота:
@@ -93,6 +96,24 @@ docker compose cp bot:/app/logs/bot.log ./bot.log
 > Файловые логи помогают расследовать сбои после восстановления доступа к
 > серверу. Для уведомления о полной недоступности сервера нужен отдельный
 > внешний мониторинг.
+
+### Выбор версии
+
+По умолчанию Compose использует последний стабильный образ с тегом `latest`.
+Чтобы закрепить конкретную версию, добавьте в `.env`:
+
+```dotenv
+BOT_VERSION=1.1.0
+```
+
+Образы публикуются для архитектур `linux/amd64` и `linux/arm64`.
+
+Если нужно собрать образ локально из исходников:
+
+```bash
+docker compose build
+docker compose up -d
+```
 
 ### Перенос существующего состояния в Docker
 
@@ -199,6 +220,7 @@ vk-to-telegram-bot/
 ├── bot.py                     # Основной скрипт
 ├── Dockerfile                 # Сборка Docker-образа
 ├── docker-compose.yml         # Запуск и постоянные volumes
+├── .github/workflows/         # CI и публикация образов в GHCR
 ├── .dockerignore              # Исключения контекста Docker
 ├── .env.example               # Пример переменных окружения
 ├── requirements.txt           # Основные зависимости

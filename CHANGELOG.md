@@ -7,6 +7,8 @@
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-06-22
+
 ### Added
 
 - Логирование одновременно в консоль и ротируемый файл.
@@ -14,6 +16,7 @@
 - Dockerfile и Docker Compose для воспроизводимого развёртывания.
 - Постоянные Docker volumes для файла состояния и логов.
 - GitHub Actions для проверки Python-кода, Compose-конфигурации и сборки Docker-образа.
+- Автоматическая публикация multi-architecture Docker-образов в GitHub Container Registry.
 
 ### Changed
 
@@ -21,6 +24,7 @@
 - Добавлены таймаут запросов к VK API, проверка конфигурации и корректное завершение по системным сигналам.
 - Файл состояния сохраняется атомарно, чтобы снизить риск его повреждения.
 - Контейнер запускается от непривилегированного пользователя с файловой системой только для чтения.
+- Docker Compose по умолчанию использует готовый образ из GHCR и поддерживает закрепление версии.
 
 ## [1.0.0] - 2026-06-21
 
@@ -33,5 +37,6 @@
 - Настройка токенов, идентификаторов и интервала проверки через `.env`.
 - Шаблон systemd-сервиса для запуска и автоматического перезапуска бота.
 
-[Unreleased]: https://github.com/j1mmy-n/vk-to-telegram-bot/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/j1mmy-n/vk-to-telegram-bot/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/j1mmy-n/vk-to-telegram-bot/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/j1mmy-n/vk-to-telegram-bot/releases/tag/v1.0.0
