@@ -130,6 +130,8 @@ sudo docker compose ps
 sudo docker compose logs -f bot
 ```
 
+При запуске бот пишет свою версию в логи, например `Версия бота: v1.1.5`.
+
 Контейнер использует `restart: unless-stopped`, поэтому автоматически
 перезапускается после сбоя приложения, перезапуска Docker и загрузки сервера.
 
@@ -152,11 +154,19 @@ cd /opt/vk-to-telegram-bot
 sudo ./update.sh latest
 ```
 
+Если на сервере не работает `git pull`, но `docker compose pull` работает,
+обновите только Docker-образ:
+
+```bash
+cd /opt/vk-to-telegram-bot
+sudo ./update.sh --no-git latest
+```
+
 Если хотите закрепить конкретную версию:
 
 ```bash
 cd /opt/vk-to-telegram-bot
-sudo ./update.sh 1.1.2
+sudo ./update.sh 1.1.5
 ```
 
 Ручной вариант делает то же самое:
@@ -168,7 +178,7 @@ sudo docker compose pull
 sudo docker compose up -d --remove-orphans
 ```
 
-Если в `.env` задано `BOT_VERSION=1.1.2`, будет использоваться именно эта
+Если в `.env` задано `BOT_VERSION=1.1.5`, будет использоваться именно эта
 версия. Для получения последнего стабильного релиза установите
 `BOT_VERSION=latest`.
 
@@ -221,7 +231,7 @@ sudo docker compose cp bot:/app/logs/bot.log ./bot.log
 Чтобы закрепить конкретную версию, добавьте в `.env`:
 
 ```dotenv
-BOT_VERSION=1.1.2
+BOT_VERSION=1.1.5
 ```
 
 Образы публикуются для архитектур `linux/amd64` и `linux/arm64`.

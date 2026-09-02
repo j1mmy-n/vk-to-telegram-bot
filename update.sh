@@ -7,9 +7,11 @@ ENV_FILE="$PROJECT_DIR/.env"
 show_usage() {
     cat <<'EOF'
 Usage:
-  ./update.sh             Update using the BOT_VERSION from .env
-  ./update.sh latest      Set BOT_VERSION=latest and update
-  ./update.sh 1.1.2       Set BOT_VERSION=1.1.2 and update
+  ./update.sh                  Update repository and Docker image
+  ./update.sh latest           Set BOT_VERSION=latest and update
+  ./update.sh 1.1.5            Set BOT_VERSION=1.1.5 and update
+  ./update.sh --no-git         Update Docker image without git pull
+  ./update.sh --no-git latest  Set BOT_VERSION=latest without git pull and update
 
 The script preserves .env, Docker volumes, bot state, and logs.
 EOF
@@ -50,17 +52,38 @@ set_bot_version() {
     mv "$temporary_file" "$ENV_FILE"
 }
 
-if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
-    show_usage
-    exit 0
-fi
+skip_git=0
+version=""
 
-if [ "$#" -gt 1 ]; then
-    show_usage >&2
-    exit 1
-fi
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -h | --help)
+            show_usage
+            exit 0
+            ;;
+        --no-git)
+            skip_git=1
+            ;;
+        -*)
+            echo "Error: unknown option '$1'." >&2
+            show_usage >&2
+            exit 1
+            ;;
+        *)
+            if [ -n "$version" ]; then
+                echo "Error: only one version argument is allowed." >&2
+                show_usage >&2
+                exit 1
+            fi
+            version="$1"
+            ;;
+    esac
+    shift
+done
 
-require_command git
+if [ "$skip_git" -eq 0 ]; then
+    require_command git
+fi
 require_command docker
 
 cd "$PROJECT_DIR"
@@ -71,9 +94,9 @@ if [ ! -f "$ENV_FILE" ]; then
     exit 1
 fi
 
-if [ "$#" -eq 1 ]; then
-    set_bot_version "$1"
-    echo "BOT_VERSION was set to '$1' in .env."
+if [ -n "$version" ]; then
+    set_bot_version "$version"
+    echo "BOT_VERSION was set to '$version' in .env."
 fi
 
 current_version=$(
@@ -86,8 +109,12 @@ if [ "$current_version" != "latest" ]; then
     echo "Run './update.sh latest' if you want to follow the latest stable image."
 fi
 
-echo "Updating repository..."
-git pull --ff-only
+if [ "$skip_git" -eq 0 ]; then
+    echo "Updating repository..."
+    git pull --ff-only
+else
+    echo "Skipping git pull (--no-git)."
+fi
 
 echo "Pulling Docker image..."
 docker compose pull
