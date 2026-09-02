@@ -49,6 +49,9 @@ jobs:
       - name: Compile
         run: python -m py_compile bot.py
 
+      - name: Test
+        run: python -m pytest
+
       - name: Audit runtime dependencies
         run: python -m pip_audit --requirement requirements.txt
 
