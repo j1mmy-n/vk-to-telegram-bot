@@ -19,6 +19,7 @@ load_dotenv()
 VK_API_URL = "https://api.vk.com/method/wall.get"
 VK_API_VERSION = "5.199"
 TELEGRAM_MEDIA_GROUP_MAX_ITEMS = 10
+BOT_APP_VERSION = os.getenv("BOT_APP_VERSION", "dev")
 
 TG_TOKEN = os.getenv("TG_TOKEN")
 CHANNEL_ID = os.getenv("CHANNEL_ID")
@@ -453,6 +454,7 @@ def run():
     signal.signal(signal.SIGTERM, request_shutdown)
 
     logger.info("Бот запущен")
+    logger.info("Версия бота: %s", BOT_APP_VERSION)
     logger.info("Группа VK: %s", GROUP_ID)
     logger.info("Канал Telegram: %s", CHANNEL_ID)
     logger.info("Интервал проверки: %s секунд", CHECK_INTERVAL)

@@ -81,6 +81,8 @@ jobs:
           load: true
           push: false
           tags: vk-to-telegram-bot:ci
+          build-args: |
+            BOT_APP_VERSION=ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -100,4 +102,4 @@ jobs:
             --env LOG_FILE=/app/logs/bot.log \
             --entrypoint python \
             vk-to-telegram-bot:ci \
-            -c "import os, bot; assert os.getuid() == 10001; bot.save_last_post(42); assert bot.load_last_post() == 42; assert bot.LOG_FILE.exists()"
+            -c "import os, bot; assert os.getuid() == 10001; assert bot.BOT_APP_VERSION == 'ci'; bot.save_last_post(42); assert bot.load_last_post() == 42; assert bot.LOG_FILE.exists()"
