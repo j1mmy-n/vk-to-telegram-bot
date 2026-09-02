@@ -57,6 +57,26 @@ def make_photo_post():
     }
 
 
+def make_multi_photo_post():
+    post = make_photo_post()
+    post["attachments"] = [
+        {
+            "type": "photo",
+            "photo": {
+                "sizes": [
+                    {
+                        "width": 1000,
+                        "height": 1000,
+                        "url": f"https://vk.example/photo_{index}.jpg",
+                    }
+                ]
+            },
+        }
+        for index in range(1, 4)
+    ]
+    return post
+
+
 def test_photo_is_downloaded_before_sending(monkeypatch):
     bot_module = load_bot(monkeypatch)
     sent = {}
@@ -83,6 +103,47 @@ def test_photo_is_downloaded_before_sending(monkeypatch):
     assert sent["photo"].read() == b"fake-image"
     assert sent["photo"].name == "vk_post_6655_1.jpg"
     assert sent["caption"] == "Проверочный пост"
+
+
+def test_multiple_photos_are_sent_as_one_media_group(monkeypatch):
+    bot_module = load_bot(monkeypatch)
+    sent = {}
+
+    def fake_get(url, **kwargs):
+        sent.setdefault("download_urls", []).append(url)
+        sent.setdefault("download_kwargs", []).append(kwargs)
+        return FakePhotoResponse()
+
+    def fake_send_photo(_chat_id, _photo, caption=None):
+        raise AssertionError("multiple photos must not be sent one by one")
+
+    def fake_send_media_group(chat_id, media):
+        sent["chat_id"] = chat_id
+        sent["media"] = media
+
+    monkeypatch.setattr(bot_module.requests, "get", fake_get)
+    monkeypatch.setattr(bot_module.bot, "send_photo", fake_send_photo)
+    monkeypatch.setattr(bot_module.bot, "send_media_group", fake_send_media_group)
+
+    assert bot_module.send_post_to_channel(make_multi_photo_post()) is True
+
+    assert sent["download_urls"] == [
+        "https://vk.example/photo_1.jpg",
+        "https://vk.example/photo_2.jpg",
+        "https://vk.example/photo_3.jpg",
+    ]
+    assert all(kwargs["stream"] is True for kwargs in sent["download_kwargs"])
+    assert sent["chat_id"] == "-100123"
+    assert len(sent["media"]) == 3
+    assert sent["media"][0].caption == "Проверочный пост"
+    assert sent["media"][1].caption is None
+    assert sent["media"][2].caption is None
+    assert all(not isinstance(media.media, str) for media in sent["media"])
+    assert [media.media.read() for media in sent["media"]] == [
+        b"fake-image",
+        b"fake-image",
+        b"fake-image",
+    ]
 
 
 def test_failed_photo_download_sends_fallback_text(monkeypatch):

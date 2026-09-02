@@ -18,6 +18,7 @@ load_dotenv()
 
 VK_API_URL = "https://api.vk.com/method/wall.get"
 VK_API_VERSION = "5.199"
+TELEGRAM_MEDIA_GROUP_MAX_ITEMS = 10
 
 TG_TOKEN = os.getenv("TG_TOKEN")
 CHANNEL_ID = os.getenv("CHANNEL_ID")
@@ -334,38 +335,92 @@ def send_photo_file(post, photo, photo_number, caption=None):
         raise
 
 
+def send_photo_group(post, photos, text):
+    media = [
+        telebot.types.InputMediaPhoto(
+            photo,
+            caption=text[:1024] if text and index == 0 else None,
+        )
+        for index, photo in enumerate(photos)
+    ]
+
+    try:
+        bot.send_media_group(CHANNEL_ID, media)
+        return True
+    except ApiTelegramException as error:
+        if error.error_code == 400:
+            logger.warning(
+                "Пост %s: Telegram не принял альбом из %s фото: %s",
+                post["id"],
+                len(photos),
+                error.description,
+            )
+            return False
+
+        raise
+
+
 def send_post_to_channel(post):
     text = post.get("text", "").strip()
     photo_urls = get_photo_urls(post)
-    sent_photos = 0
+    downloaded_photos = []
     skipped_photos = 0
 
     try:
         for index, photo_url in enumerate(photo_urls, start=1):
+            if len(downloaded_photos) >= TELEGRAM_MEDIA_GROUP_MAX_ITEMS:
+                skipped_photos += len(photo_urls) - index + 1
+                logger.warning(
+                    "Пост %s: больше %s фото; оставшиеся фото пропущены",
+                    post["id"],
+                    TELEGRAM_MEDIA_GROUP_MAX_ITEMS,
+                )
+                break
+
             photo = download_photo(photo_url, post["id"], index)
             if not photo:
                 skipped_photos += 1
                 continue
 
-            caption = text[:1024] if text and sent_photos == 0 else None
-            if send_photo_file(post, photo, index, caption=caption):
-                sent_photos += 1
-            else:
-                skipped_photos += 1
+            downloaded_photos.append((index, photo))
 
-        if sent_photos:
-            if len(photo_urls) == 1:
+        if len(downloaded_photos) == 1:
+            photo_number, photo = downloaded_photos[0]
+            if send_photo_file(
+                post,
+                photo,
+                photo_number,
+                caption=text[:1024] if text else None,
+            ):
                 logger.info("Пост %s: отправлена фотография", post["id"])
-            else:
+                logger.info("Пост %s успешно обработан", post["id"])
+                return True
+
+            skipped_photos += 1
+            return send_text_fallback(
+                post,
+                text,
+                " вместо фото; Telegram не принял изображение",
+            )
+
+        if len(downloaded_photos) > 1:
+            photos = [photo for _, photo in downloaded_photos]
+            if send_photo_group(post, photos, text):
                 logger.info(
-                    "Пост %s: отправлено фотографий: %s, пропущено: %s",
+                    "Пост %s: отправлен альбом, фотографий: %s, пропущено: %s",
                     post["id"],
-                    sent_photos,
+                    len(downloaded_photos),
                     skipped_photos,
                 )
+                logger.info("Пост %s успешно обработан", post["id"])
+                return True
 
-            logger.info("Пост %s успешно обработан", post["id"])
-            return True
+            skipped_photos += len(downloaded_photos)
+            return send_text_fallback(
+                post,
+                text,
+                " вместо альбома; Telegram не принял изображения",
+            )
 
         if photo_urls:
             return send_text_fallback(
