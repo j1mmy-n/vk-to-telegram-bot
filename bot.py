@@ -3,13 +3,16 @@ import logging
 import os
 import signal
 import sys
+from io import BytesIO
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from threading import Event
+from urllib.parse import urlparse
 
 import requests
 import telebot
 from dotenv import load_dotenv
+from telebot.apihelper import ApiTelegramException
 
 load_dotenv()
 
@@ -23,6 +26,7 @@ GROUP_ID_RAW = os.getenv("GROUP_ID")
 
 CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL", "3600"))
 REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "30"))
+PHOTO_MAX_BYTES = int(os.getenv("PHOTO_MAX_BYTES", str(20 * 1024 * 1024)))
 LAST_POST_FILE = Path(os.getenv("LAST_POST_FILE", "last_post.json"))
 LOG_FILE = Path(os.getenv("LOG_FILE", "logs/bot.log"))
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -88,6 +92,14 @@ def validate_settings():
 
     if CHECK_INTERVAL <= 0:
         logger.error("CHECK_INTERVAL должен быть больше нуля")
+        raise SystemExit(1)
+
+    if REQUEST_TIMEOUT <= 0:
+        logger.error("REQUEST_TIMEOUT должен быть больше нуля")
+        raise SystemExit(1)
+
+    if PHOTO_MAX_BYTES <= 0:
+        logger.error("PHOTO_MAX_BYTES должен быть больше нуля")
         raise SystemExit(1)
 
     return group_id
@@ -182,12 +194,10 @@ def get_new_posts():
     return new_posts
 
 
-def send_post_to_channel(post):
-    text = post.get("text", "").strip()
-    attachments = post.get("attachments", [])
-    photos = []
+def get_photo_urls(post):
+    photo_urls = []
 
-    for attachment in attachments:
+    for attachment in post.get("attachments", []):
         if attachment.get("type") != "photo":
             continue
 
@@ -200,41 +210,177 @@ def send_post_to_channel(post):
             key=lambda size: size.get("width", 0) * size.get("height", 0),
         )
         if best.get("url"):
-            photos.append(best["url"])
+            photo_urls.append(best["url"])
+
+    return photo_urls
+
+
+def build_post_url(post):
+    owner_id = post.get("owner_id", GROUP_ID)
+    post_id = post.get("id")
+
+    if not post_id:
+        return None
+
+    return f"https://vk.com/wall{owner_id}_{post_id}"
+
+
+def get_photo_filename(url, post_id, photo_number):
+    path = urlparse(url).path
+    suffix = Path(path).suffix
+
+    if not suffix or len(suffix) > 10:
+        suffix = ".jpg"
+
+    return f"vk_post_{post_id}_{photo_number}{suffix}"
+
+
+def download_photo(url, post_id, photo_number):
+    try:
+        with requests.get(
+            url,
+            stream=True,
+            timeout=REQUEST_TIMEOUT,
+        ) as response:
+            response.raise_for_status()
+
+            content_length = response.headers.get("Content-Length")
+            if content_length and int(content_length) > PHOTO_MAX_BYTES:
+                logger.warning(
+                    "Пост %s: фото %s больше лимита PHOTO_MAX_BYTES (%s > %s)",
+                    post_id,
+                    photo_number,
+                    content_length,
+                    PHOTO_MAX_BYTES,
+                )
+                return None
+
+            photo = BytesIO()
+            for chunk in response.iter_content(chunk_size=64 * 1024):
+                if not chunk:
+                    continue
+
+                photo.write(chunk)
+                if photo.tell() > PHOTO_MAX_BYTES:
+                    logger.warning(
+                        "Пост %s: фото %s превысило лимит PHOTO_MAX_BYTES (%s)",
+                        post_id,
+                        photo_number,
+                        PHOTO_MAX_BYTES,
+                    )
+                    return None
+
+    except (requests.RequestException, ValueError) as error:
+        logger.warning(
+            "Пост %s: не удалось скачать фото %s: %s",
+            post_id,
+            photo_number,
+            error,
+        )
+        return None
+
+    if photo.tell() == 0:
+        logger.warning("Пост %s: фото %s скачалось пустым", post_id, photo_number)
+        return None
+
+    photo.seek(0)
+    photo.name = get_photo_filename(url, post_id, photo_number)
+    return photo
+
+
+def send_text_fallback(post, text, reason):
+    post_url = build_post_url(post)
+
+    if text:
+        message = text[:4096]
+    elif post_url:
+        message = f"Пост VK: {post_url}"
+    else:
+        logger.warning(
+            "Пост %s не содержит поддерживаемого контента",
+            post["id"],
+        )
+        return True
+
+    if reason and post_url and post_url not in message:
+        suffix = f"\n\nОригинал: {post_url}"
+        message_limit = 4096 - len(suffix)
+        message = f"{message[:message_limit]}{suffix}"
 
     try:
-        if len(photos) == 1:
-            bot.send_photo(
-                CHANNEL_ID,
-                photos[0],
-                caption=text[:1024] if text else None,
-            )
-            logger.info("Пост %s: отправлена фотография", post["id"])
-        elif len(photos) > 1:
-            media = [
-                telebot.types.InputMediaPhoto(photo_url) for photo_url in photos[:-1]
-            ]
-            media.append(
-                telebot.types.InputMediaPhoto(
-                    photos[-1],
-                    caption=text[:1024] if text else None,
-                )
-            )
-            bot.send_media_group(CHANNEL_ID, media)
-            logger.info(
-                "Пост %s: отправлено фотографий: %s",
-                post["id"],
-                len(photos),
-            )
-        elif text:
-            bot.send_message(CHANNEL_ID, text[:4096])
-            logger.info("Пост %s: отправлен текст", post["id"])
-        else:
+        bot.send_message(CHANNEL_ID, message)
+        logger.info("Пост %s: отправлен текст%s", post["id"], reason)
+        logger.info("Пост %s успешно обработан", post["id"])
+        return True
+    except Exception:
+        logger.exception("Не удалось отправить пост %s в Telegram", post["id"])
+        return False
+
+
+def send_photo_file(post, photo, photo_number, caption=None):
+    try:
+        bot.send_photo(CHANNEL_ID, photo, caption=caption)
+        return True
+    except ApiTelegramException as error:
+        if error.error_code == 400:
             logger.warning(
-                "Пост %s не содержит поддерживаемого контента",
+                "Пост %s: Telegram не принял фото %s: %s",
                 post["id"],
+                photo_number,
+                error.description,
+            )
+            return False
+
+        raise
+
+
+def send_post_to_channel(post):
+    text = post.get("text", "").strip()
+    photo_urls = get_photo_urls(post)
+    sent_photos = 0
+    skipped_photos = 0
+
+    try:
+        for index, photo_url in enumerate(photo_urls, start=1):
+            photo = download_photo(photo_url, post["id"], index)
+            if not photo:
+                skipped_photos += 1
+                continue
+
+            caption = text[:1024] if text and sent_photos == 0 else None
+            if send_photo_file(post, photo, index, caption=caption):
+                sent_photos += 1
+            else:
+                skipped_photos += 1
+
+        if sent_photos:
+            if len(photo_urls) == 1:
+                logger.info("Пост %s: отправлена фотография", post["id"])
+            else:
+                logger.info(
+                    "Пост %s: отправлено фотографий: %s, пропущено: %s",
+                    post["id"],
+                    sent_photos,
+                    skipped_photos,
+                )
+
+            logger.info("Пост %s успешно обработан", post["id"])
+            return True
+
+        if photo_urls:
+            return send_text_fallback(
+                post,
+                text,
+                " вместо фото; все фото были пропущены",
             )
 
+        if text:
+            return send_text_fallback(post, text, "")
+
+        logger.warning(
+            "Пост %s не содержит поддерживаемого контента",
+            post["id"],
+        )
         logger.info("Пост %s успешно обработан", post["id"])
         return True
     except Exception:
