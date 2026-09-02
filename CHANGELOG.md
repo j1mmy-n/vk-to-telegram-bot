@@ -7,6 +7,8 @@
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-09-02
+
 ### Added
 
 - Добавлена настройка `PHOTO_MAX_BYTES` для ограничения размера скачиваемых фотографий.
@@ -67,7 +69,8 @@
 - Настройка токенов, идентификаторов и интервала проверки через `.env`.
 - Шаблон systemd-сервиса для запуска и автоматического перезапуска бота.
 
-[Unreleased]: https://github.com/j1mmy-n/vk-to-telegram-bot/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/j1mmy-n/vk-to-telegram-bot/compare/v1.1.2...HEAD
+[1.1.2]: https://github.com/j1mmy-n/vk-to-telegram-bot/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/j1mmy-n/vk-to-telegram-bot/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/j1mmy-n/vk-to-telegram-bot/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/j1mmy-n/vk-to-telegram-bot/releases/tag/v1.0.0
