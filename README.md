@@ -135,6 +135,32 @@ sudo docker compose logs -f bot
 
 ### Обновление
 
+Обычно достаточно одной команды:
+
+```bash
+cd /opt/vk-to-telegram-bot
+sudo ./update.sh
+```
+
+Скрипт обновляет файлы проекта, подтягивает Docker-образ и перезапускает
+контейнер. `.env`, токены, файл состояния и логи при этом сохраняются.
+
+Если нужно сразу переключиться на последний стабильный образ:
+
+```bash
+cd /opt/vk-to-telegram-bot
+sudo ./update.sh latest
+```
+
+Если хотите закрепить конкретную версию:
+
+```bash
+cd /opt/vk-to-telegram-bot
+sudo ./update.sh 1.1.2
+```
+
+Ручной вариант делает то же самое:
+
 ```bash
 cd /opt/vk-to-telegram-bot
 sudo git pull --ff-only
@@ -142,7 +168,7 @@ sudo docker compose pull
 sudo docker compose up -d --remove-orphans
 ```
 
-Если в `.env` задано `BOT_VERSION=1.1.0`, будет использоваться именно эта
+Если в `.env` задано `BOT_VERSION=1.1.2`, будет использоваться именно эта
 версия. Для получения последнего стабильного релиза установите
 `BOT_VERSION=latest`.
 
@@ -195,7 +221,7 @@ sudo docker compose cp bot:/app/logs/bot.log ./bot.log
 Чтобы закрепить конкретную версию, добавьте в `.env`:
 
 ```dotenv
-BOT_VERSION=1.1.0
+BOT_VERSION=1.1.2
 ```
 
 Образы публикуются для архитектур `linux/amd64` и `linux/arm64`.
@@ -298,6 +324,8 @@ CHANNEL_ID=-1001234567890
 VK_TOKEN=vk1a.ABCdef...GHIjkl
 GROUP_ID=-123456789
 CHECK_INTERVAL=1800
+REQUEST_TIMEOUT=30
+PHOTO_MAX_BYTES=20971520
 ```
 
 ❗ Не публикуйте свои реальные токены!
@@ -320,6 +348,7 @@ vk-to-telegram-bot/
 ├── bot.py                     # Основной скрипт
 ├── Dockerfile                 # Сборка Docker-образа
 ├── docker-compose.yml         # Запуск и постоянные volumes
+├── update.sh                  # Обновление бота на сервере одной командой
 ├── .github/workflows/         # CI и публикация образов в GHCR
 ├── .dockerignore              # Исключения контекста Docker
 ├── .env.example               # Пример переменных окружения

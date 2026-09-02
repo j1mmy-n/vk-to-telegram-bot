@@ -49,6 +49,9 @@ jobs:
       - name: Compile
         run: python -m py_compile bot.py
 
+      - name: Check update script
+        run: sh -n update.sh
+
       - name: Test
         run: python -m pytest
 
