@@ -7,6 +7,8 @@
 
 ## [Unreleased]
 
+## [1.1.4] - 2026-09-02
+
 ### Fixed
 
 - Посты VK с несколькими фотографиями снова отправляются в Telegram одним альбомом, а не отдельными сообщениями на каждое фото.
@@ -84,7 +86,8 @@
 - Настройка токенов, идентификаторов и интервала проверки через `.env`.
 - Шаблон systemd-сервиса для запуска и автоматического перезапуска бота.
 
-[Unreleased]: https://github.com/j1mmy-n/vk-to-telegram-bot/compare/v1.1.3...HEAD
+[Unreleased]: https://github.com/j1mmy-n/vk-to-telegram-bot/compare/v1.1.4...HEAD
+[1.1.4]: https://github.com/j1mmy-n/vk-to-telegram-bot/compare/v1.1.3...v1.1.4
 [1.1.3]: https://github.com/j1mmy-n/vk-to-telegram-bot/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/j1mmy-n/vk-to-telegram-bot/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/j1mmy-n/vk-to-telegram-bot/compare/v1.1.0...v1.1.1
